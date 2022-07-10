@@ -1,2 +1,2 @@
-# dir-cleaner
-Clean up files under directory to sub directories
+# DirCleaner
+Clean up files under directory to subdirectories by date.
