@@ -9,6 +9,28 @@ import (
 	"time"
 )
 
+var customFileSystem fileSystem = osFS{}
+
+type fileSystem interface {
+	Stat(name string) (os.FileInfo, error)
+	Mkdir(name string, perm os.FileMode) error
+}
+
+type file interface {
+	Name() string
+	Stat() (os.FileInfo, error)
+	ModTime() time.Time
+	IsDir() bool
+}
+
+// osFS implements fileSystem using the local disk.
+type osFS struct{}
+
+func (osFS) Stat(name string) (os.FileInfo, error) { return os.Stat(name) }
+func (osFS) Mkdir(name string, perm os.FileMode) error {
+	return os.Mkdir(name, perm)
+}
+
 func main() {
 	fmt.Println("DirCleaner started\nEnter path to directory:")
 	var minFilesInDir = 2
@@ -27,7 +49,7 @@ func main() {
 		log.Fatal("Path is too short!")
 		return
 	}
-	pathIsNotDirectory, err := isNotDirectory(pathToDirectory)
+	pathIsNotDirectory, err := isNotDirectory(pathToDirectory, customFileSystem)
 	if err != nil || pathIsNotDirectory {
 		log.Fatal("Path is not directory!", err)
 		return
@@ -40,7 +62,7 @@ func main() {
 		return
 	}
 
-	var datesMap = sortFilesByDateToMap(files)
+	var datesMap = groupFilesByDate(files)
 
 	err = cleanUpFilesToFolders(pathToDirectory, datesMap, minFilesInDir)
 	if err != nil {
@@ -50,8 +72,8 @@ func main() {
 	fmt.Println("Directory has been cleaned successfully.")
 }
 
-func isNotDirectory(path string) (bool, error) {
-	fileInfo, err := os.Stat(path)
+func isNotDirectory(path string, fs fileSystem) (bool, error) {
+	fileInfo, err := fs.Stat(path)
 	if err != nil {
 		return true, err
 	}
@@ -59,7 +81,7 @@ func isNotDirectory(path string) (bool, error) {
 	return !fileInfo.IsDir(), err
 }
 
-func sortFilesByDateToMap(files []fs.FileInfo) map[time.Time][]fs.FileInfo {
+func groupFilesByDate(files []fs.FileInfo) map[time.Time][]fs.FileInfo {
 	// build map with date as key and list of files as value
 	var datesMap = map[time.Time][]fs.FileInfo{}
 	for _, file := range files {
