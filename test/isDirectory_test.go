@@ -1,6 +1,7 @@
-package main
+package dir_cleaner
 
 import (
+	"dir_cleaner"
 	"os"
 	"testing"
 	"time"
@@ -24,9 +25,9 @@ func (fileInfo) ModTime() time.Time { return time.Time{} }
 func (fileInfo) Sys() any           { return nil }
 func (fileInfo) IsDir() bool        { return true }
 
-func isDirectory_pathToDirectory_returnsTrue(t *testing.T) {
-	var fs fileSystem = testFS{}
-	actual, _ := isNotDirectory("path", fs)
+func Test_isDirectory_pathToDirectory_returnsTrue(t *testing.T) {
+	var fs dir_cleaner.FileSystem = testFS{}
+	actual, _ := dir_cleaner.IsNotDirectory("path", fs)
 	expected := true
 
 	if expected != actual {

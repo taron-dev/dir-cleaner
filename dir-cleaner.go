@@ -1,4 +1,4 @@
-package main
+package dir_cleaner
 
 import (
 	"fmt"
@@ -9,21 +9,21 @@ import (
 	"time"
 )
 
-var customFileSystem fileSystem = osFS{}
+var customFileSystem FileSystem = osFS{}
 
-type fileSystem interface {
+type FileSystem interface {
 	Stat(name string) (os.FileInfo, error)
 	Mkdir(name string, perm os.FileMode) error
 }
 
-type file interface {
+type File interface {
 	Name() string
 	Stat() (os.FileInfo, error)
 	ModTime() time.Time
 	IsDir() bool
 }
 
-// osFS implements fileSystem using the local disk.
+// osFS implements FileSystem using the local disk.
 type osFS struct{}
 
 func (osFS) Stat(name string) (os.FileInfo, error) { return os.Stat(name) }
@@ -49,7 +49,7 @@ func main() {
 		log.Fatal("Path is too short!")
 		return
 	}
-	pathIsNotDirectory, err := isNotDirectory(pathToDirectory, customFileSystem)
+	pathIsNotDirectory, err := IsNotDirectory(pathToDirectory, customFileSystem)
 	if err != nil || pathIsNotDirectory {
 		log.Fatal("Path is not directory!", err)
 		return
@@ -62,9 +62,9 @@ func main() {
 		return
 	}
 
-	var datesMap = groupFilesByDate(files)
+	var datesMap = GroupFilesByDate(files)
 
-	err = cleanUpFilesToFolders(pathToDirectory, datesMap, minFilesInDir)
+	err = CleanUpFilesToFolders(pathToDirectory, datesMap, minFilesInDir)
 	if err != nil {
 		log.Fatal("Can't clean up files.", err)
 		return
@@ -72,7 +72,7 @@ func main() {
 	fmt.Println("Directory has been cleaned successfully.")
 }
 
-func isNotDirectory(path string, fs fileSystem) (bool, error) {
+func IsNotDirectory(path string, fs FileSystem) (bool, error) {
 	fileInfo, err := fs.Stat(path)
 	if err != nil {
 		return true, err
@@ -81,12 +81,12 @@ func isNotDirectory(path string, fs fileSystem) (bool, error) {
 	return !fileInfo.IsDir(), err
 }
 
-func groupFilesByDate(files []fs.FileInfo) map[time.Time][]fs.FileInfo {
+func GroupFilesByDate(files []fs.FileInfo) map[time.Time][]fs.FileInfo {
 	// build map with date as key and list of files as value
 	var datesMap = map[time.Time][]fs.FileInfo{}
 	for _, file := range files {
 		if file.IsDir() == false {
-			// remove hours minutes and seconds from file date
+			// remove hours minutes and seconds from File date
 			hours := -time.Duration(file.ModTime().Hour())
 			minutes := -time.Duration(file.ModTime().Minute())
 			seconds := -time.Duration(file.ModTime().Second())
@@ -103,7 +103,7 @@ func groupFilesByDate(files []fs.FileInfo) map[time.Time][]fs.FileInfo {
 	return datesMap
 }
 
-func cleanUpFilesToFolders(pathToDirectory string, datesFilesMap map[time.Time][]fs.FileInfo, minFilesInDir int) error {
+func CleanUpFilesToFolders(pathToDirectory string, datesFilesMap map[time.Time][]fs.FileInfo, minFilesInDir int) error {
 	for keyDate, listOfFiles := range datesFilesMap {
 		// create folders
 		var dirName = ""
@@ -124,7 +124,7 @@ func cleanUpFilesToFolders(pathToDirectory string, datesFilesMap map[time.Time][
 				newLocation := dirName + "/" + file.Name()
 				err := os.Rename(oldLocation, newLocation)
 				if err != nil {
-					log.Println("Can't move file from "+oldLocation+" to "+newLocation, err)
+					log.Println("Can't move File from "+oldLocation+" to "+newLocation, err)
 					return err
 				}
 			}
