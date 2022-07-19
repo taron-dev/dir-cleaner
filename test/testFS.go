@@ -39,3 +39,33 @@ func (fileInfo2) Mode() os.FileMode  { return 0755 }
 func (fileInfo2) ModTime() time.Time { return time.Time{} }
 func (fileInfo2) Sys() any           { return nil }
 func (fileInfo2) IsDir() bool        { return true }
+
+type testFile struct {
+	time  time.Time
+	name  string
+	size  int64
+	mode  os.FileMode
+	isDir bool
+}
+
+func (f testFile) Name() string       { return f.name }
+func (f testFile) Size() int64        { return f.size }
+func (f testFile) Mode() os.FileMode  { return f.mode }
+func (f testFile) ModTime() time.Time { return f.time }
+func (f testFile) Sys() any           { return nil }
+func (f testFile) IsDir() bool        { return f.isDir }
+
+func FileConstructor(
+	time time.Time,
+	name string,
+	size int64,
+	mode os.FileMode,
+	isDir bool) *testFile {
+	return &testFile{
+		time:  time,
+		name:  name,
+		size:  size,
+		mode:  mode,
+		isDir: isDir,
+	}
+}

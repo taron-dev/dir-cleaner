@@ -81,9 +81,9 @@ func IsNotDirectory(path string, fs FileSystem) (bool, error) {
 	return !fileInfo.IsDir(), err
 }
 
-func GroupFilesByDate(files []fs.FileInfo) map[time.Time][]fs.FileInfo {
+func GroupFilesByDate(files []fs.FileInfo) map[time.Time][]File {
 	// build map with date as key and list of files as value
-	var datesMap = map[time.Time][]fs.FileInfo{}
+	var datesMap = map[time.Time][]File{}
 	for _, file := range files {
 		if file.IsDir() == false {
 			// remove hours minutes and seconds from File date
@@ -93,17 +93,17 @@ func GroupFilesByDate(files []fs.FileInfo) map[time.Time][]fs.FileInfo {
 			keyTime := file.ModTime().Add(time.Hour*hours + time.Minute*minutes + time.Second*seconds)
 
 			if datesMap[keyTime] == nil {
-				datesMap[keyTime] = []fs.FileInfo{file}
+				datesMap[keyTime] = []File{file.(File)}
 			} else {
 				var actualKeyFiles = datesMap[keyTime]
-				datesMap[keyTime] = append(actualKeyFiles, file)
+				datesMap[keyTime] = append(actualKeyFiles, file.(File))
 			}
 		}
 	}
 	return datesMap
 }
 
-func CleanUpFilesToFolders(pathToDirectory string, datesFilesMap map[time.Time][]fs.FileInfo, minFilesInDir int) error {
+func CleanUpFilesToFolders(pathToDirectory string, datesFilesMap map[time.Time][]File, minFilesInDir int) error {
 	for keyDate, listOfFiles := range datesFilesMap {
 		// create folders
 		var dirName = ""
