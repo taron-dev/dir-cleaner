@@ -18,7 +18,6 @@ type FileSystem interface {
 
 type File interface {
 	Name() string
-	Stat() (os.FileInfo, error)
 	ModTime() time.Time
 	IsDir() bool
 }

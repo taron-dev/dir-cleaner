@@ -40,7 +40,7 @@ func (fileInfo2) ModTime() time.Time { return time.Time{} }
 func (fileInfo2) Sys() any           { return nil }
 func (fileInfo2) IsDir() bool        { return true }
 
-type testFile struct {
+type TestFile struct {
 	time  time.Time
 	name  string
 	size  int64
@@ -48,20 +48,20 @@ type testFile struct {
 	isDir bool
 }
 
-func (f testFile) Name() string       { return f.name }
-func (f testFile) Size() int64        { return f.size }
-func (f testFile) Mode() os.FileMode  { return f.mode }
-func (f testFile) ModTime() time.Time { return f.time }
-func (f testFile) Sys() any           { return nil }
-func (f testFile) IsDir() bool        { return f.isDir }
+func (f TestFile) Name() string       { return f.name }
+func (f TestFile) Size() int64        { return f.size }
+func (f TestFile) Mode() os.FileMode  { return f.mode }
+func (f TestFile) ModTime() time.Time { return f.time }
+func (f TestFile) Sys() any           { return nil }
+func (f TestFile) IsDir() bool        { return f.isDir }
 
 func FileConstructor(
 	time time.Time,
 	name string,
 	size int64,
 	mode os.FileMode,
-	isDir bool) *testFile {
-	return &testFile{
+	isDir bool) *TestFile {
+	return &TestFile{
 		time:  time,
 		name:  name,
 		size:  size,
