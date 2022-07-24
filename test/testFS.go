@@ -1,11 +1,18 @@
 package dir_cleaner
 
 import (
+	"fmt"
 	"os"
 	"time"
 )
 
-type TestFileSystem struct{}
+type TestFileSystem struct {
+	Files map[string]TestFile
+}
+
+func (fs TestFileSystem) getFiles() map[string]TestFile {
+	return fs.Files
+}
 
 func (TestFileSystem) Stat(name string) (os.FileInfo, error) {
 	t1, _ := time.Parse("2006-01-02", "2020-01-28")
@@ -29,8 +36,26 @@ func (TestFileSystem) Stat(name string) (os.FileInfo, error) {
 	return nil, nil
 }
 
-func (TestFileSystem) Mkdir(name string, perm os.FileMode) error {
-	return nil
+func (fs TestFileSystem) Mkdir(name string, perm os.FileMode) error {
+	_, ok := fs.Files[name]
+	if ok {
+		return fmt.Errorf(name, "already exists")
+	} else {
+		fs.Files[name] = *FileConstructor(time.Now(), name, 1, perm, true)
+		return nil
+	}
+}
+
+func (fs TestFileSystem) Rename(oldLocation string, newLocation string) error {
+	oldFile, oldLocationOk := fs.Files[oldLocation]
+	_, newLocationOk := fs.Files[newLocation]
+	if oldLocationOk && !newLocationOk {
+		fs.Files[newLocation] = oldFile
+		delete(fs.Files, oldLocation)
+		return nil
+	} else {
+		return fmt.Errorf(oldLocation, "does not exists. Or", newLocation, "already exists")
+	}
 }
 
 type TestFile struct {

@@ -14,6 +14,7 @@ var customFileSystem FileSystem = osFS{}
 type FileSystem interface {
 	Stat(name string) (os.FileInfo, error)
 	Mkdir(name string, perm os.FileMode) error
+	Rename(oldLocation string, newLocation string) error
 }
 
 type File interface {
@@ -28,6 +29,9 @@ type osFS struct{}
 func (osFS) Stat(name string) (os.FileInfo, error) { return os.Stat(name) }
 func (osFS) Mkdir(name string, perm os.FileMode) error {
 	return os.Mkdir(name, perm)
+}
+func (osFS) Rename(oldLocation string, newLocation string) error {
+	return os.Rename(oldLocation, newLocation)
 }
 
 func main() {
@@ -63,7 +67,7 @@ func main() {
 
 	var datesMap = GroupFilesByDate(files)
 
-	err = CleanUpFilesToFolders(pathToDirectory, datesMap, minFilesInDir)
+	err = CleanUpFilesToFolders(pathToDirectory, datesMap, minFilesInDir, customFileSystem)
 	if err != nil {
 		log.Fatal("Can't clean up files.", err)
 		return
@@ -102,14 +106,14 @@ func GroupFilesByDate(files []fs.FileInfo) map[time.Time][]File {
 	return datesMap
 }
 
-func CleanUpFilesToFolders(pathToDirectory string, datesFilesMap map[time.Time][]File, minFilesInDir int) error {
+func CleanUpFilesToFolders(pathToDirectory string, datesFilesMap map[time.Time][]File, minFilesInDir int, customFileSystem FileSystem) error {
 	for keyDate, listOfFiles := range datesFilesMap {
 		// create folders
 		var dirName = ""
 		createFolderForFiles := len(listOfFiles) > minFilesInDir
 		if createFolderForFiles {
 			dirName = pathToDirectory + "/" + keyDate.Format("2006-01-02")
-			err := os.Mkdir(dirName, 0774)
+			err := customFileSystem.Mkdir(dirName, 0774)
 			if err != nil {
 				log.Println("Can't create directory "+dirName, err)
 				dirName = ""
@@ -121,7 +125,7 @@ func CleanUpFilesToFolders(pathToDirectory string, datesFilesMap map[time.Time][
 			for _, file := range listOfFiles {
 				oldLocation := pathToDirectory + "/" + file.Name()
 				newLocation := dirName + "/" + file.Name()
-				err := os.Rename(oldLocation, newLocation)
+				err := customFileSystem.Rename(oldLocation, newLocation)
 				if err != nil {
 					log.Println("Can't move File from "+oldLocation+" to "+newLocation, err)
 					return err
