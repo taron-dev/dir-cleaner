@@ -1,8 +1,10 @@
-package dir_cleaner
+package test
 
 import (
-	"dir_cleaner"
 	"github.com/stretchr/testify/assert"
+	"github.com/taron-dev/dir-cleaner/dir_cleaner_util"
+
+	"github.com/taron-dev/dir-cleaner/file_system"
 	"testing"
 	"time"
 )
@@ -12,16 +14,16 @@ func Test_CleanUpFilesToFolders_MoreFilesThanMinCountForOneDate_FilesMovedToFold
 	f1 := FileConstructor(t1, "f1.png", 1, 0755, false)
 	f2 := FileConstructor(t1, "f2.png", 1, 0755, false)
 
-	var testFiles = map[string]TestFile{}
+	var testFiles = map[string]File{}
 	testFiles["/f1.png"] = *f1
 	testFiles["/f2.png"] = *f2
 
-	var fs dir_cleaner.FileSystem = &TestFileSystem{Files: testFiles}
+	var fs file_system.FileSystem = &FileSystem{Files: testFiles}
 
-	var datesMap = map[time.Time][]dir_cleaner.File{}
-	datesMap[t1] = []dir_cleaner.File{f1, f2}
+	var datesMap = map[time.Time][]file_system.File{}
+	datesMap[t1] = []file_system.File{f1, f2}
 
-	err := dir_cleaner.CleanUpFilesToFolders("", datesMap, 1, fs)
+	err := dir_cleaner_util.CleanUpFilesToFolders("", datesMap, 1, fs)
 	assert.Nil(t, err)
 	assert.Equal(t, *f1, testFiles["/2022-01-28/f1.png"])
 	assert.Equal(t, *f2, testFiles["/2022-01-28/f2.png"])
@@ -32,16 +34,16 @@ func Test_CleanUpFilesToFolders_LessFilesThanMinCountForOneDate_FilesNotMovedToF
 	f1 := FileConstructor(t1, "f1.png", 1, 0755, false)
 	f2 := FileConstructor(t1, "f2.png", 1, 0755, false)
 
-	var testFiles = map[string]TestFile{}
+	var testFiles = map[string]File{}
 	testFiles["/f1.png"] = *f1
 	testFiles["/f2.png"] = *f2
 
-	var fs dir_cleaner.FileSystem = &TestFileSystem{Files: testFiles}
+	var fs file_system.FileSystem = &FileSystem{Files: testFiles}
 
-	var datesMap = map[time.Time][]dir_cleaner.File{}
-	datesMap[t1] = []dir_cleaner.File{f1, f2}
+	var datesMap = map[time.Time][]file_system.File{}
+	datesMap[t1] = []file_system.File{f1, f2}
 
-	err := dir_cleaner.CleanUpFilesToFolders("", datesMap, 2, fs)
+	err := dir_cleaner_util.CleanUpFilesToFolders("", datesMap, 2, fs)
 	assert.Nil(t, err)
 	assert.Equal(t, *f1, testFiles["/f1.png"])
 	assert.Equal(t, *f2, testFiles["/f2.png"])

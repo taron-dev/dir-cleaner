@@ -1,4 +1,4 @@
-module dir_cleaner
+module github.com/taron-dev/dir-cleaner
 
 go 1.18
 

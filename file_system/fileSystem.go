@@ -1,11 +1,11 @@
-package dir_cleaner
+package file_system
 
 import (
 	"os"
 	"time"
 )
 
-var fileSystem FileSystem = osFS{}
+var OsFileSystem FileSystem = osFS{}
 
 // osFS implements FileSystem using the local disk.
 type osFS struct{}
@@ -33,4 +33,3 @@ func (osFS) Mkdir(name string, perm os.FileMode) error {
 func (osFS) Rename(oldLocation string, newLocation string) error {
 	return os.Rename(oldLocation, newLocation)
 }
-

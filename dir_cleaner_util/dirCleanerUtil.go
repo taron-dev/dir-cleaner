@@ -1,50 +1,13 @@
-package dir_cleaner
+package dir_cleaner_util
 
 import (
-	"fmt"
+	"github.com/taron-dev/dir-cleaner/file_system"
 	"io/fs"
-	"io/ioutil"
 	"log"
 	"time"
 )
 
-func main() {
-	log.Println("DirCleaner started\nEnter path to directory:")
-	var minFilesInDir = 2
-	var pathToDirectory = ""
-
-	// read path to directory to clean
-	_, err := fmt.Scanf("%s", &pathToDirectory)
-	if err != nil {
-		log.Fatal(err)
-		return
-	}
-
-	// Validate path
-	pathIsNotDirectory, err := IsNotDirectory(pathToDirectory, fileSystem)
-	if err != nil || pathIsNotDirectory {
-		log.Fatal("Path is not directory!", err)
-		return
-	}
-
-	// read all files in folder
-	files, err := ioutil.ReadDir(pathToDirectory)
-	if err != nil {
-		log.Fatal(err)
-		return
-	}
-
-	var datesMap = GroupFilesByDate(files)
-
-	err = CleanUpFilesToFolders(pathToDirectory, datesMap, minFilesInDir, fileSystem)
-	if err != nil {
-		log.Fatal("Can't clean up files.", err)
-		return
-	}
-	log.Println("Directory has been cleaned successfully.")
-}
-
-func IsNotDirectory(path string, fs FileSystem) (bool, error) {
+func IsNotDirectory(path string, fs file_system.FileSystem) (bool, error) {
 	fileInfo, err := fs.Stat(path)
 	if err != nil {
 		return true, err
@@ -53,9 +16,9 @@ func IsNotDirectory(path string, fs FileSystem) (bool, error) {
 	return !fileInfo.IsDir(), err
 }
 
-func GroupFilesByDate(files []fs.FileInfo) map[time.Time][]File {
+func GroupFilesByDate(files []fs.FileInfo) map[time.Time][]file_system.File {
 	// build map with date as key and list of files as value
-	var datesMap = map[time.Time][]File{}
+	var datesMap = map[time.Time][]file_system.File{}
 	for _, file := range files {
 		if file.IsDir() == false {
 			// remove hours minutes and seconds from File date
@@ -65,17 +28,17 @@ func GroupFilesByDate(files []fs.FileInfo) map[time.Time][]File {
 			keyTime := file.ModTime().Add(time.Hour*hours + time.Minute*minutes + time.Second*seconds)
 
 			if datesMap[keyTime] == nil {
-				datesMap[keyTime] = []File{file.(File)}
+				datesMap[keyTime] = []file_system.File{file.(file_system.File)}
 			} else {
 				var actualKeyFiles = datesMap[keyTime]
-				datesMap[keyTime] = append(actualKeyFiles, file.(File))
+				datesMap[keyTime] = append(actualKeyFiles, file.(file_system.File))
 			}
 		}
 	}
 	return datesMap
 }
 
-func CleanUpFilesToFolders(pathToDirectory string, datesFilesMap map[time.Time][]File, minFilesInDir int, customFileSystem FileSystem) error {
+func CleanUpFilesToFolders(pathToDirectory string, datesFilesMap map[time.Time][]file_system.File, minFilesInDir int, customFileSystem file_system.FileSystem) error {
 	for keyDate, listOfFiles := range datesFilesMap {
 		createFolderForFiles := len(listOfFiles) > minFilesInDir
 		if createFolderForFiles {

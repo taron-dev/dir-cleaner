@@ -1,4 +1,4 @@
-package dir_cleaner
+package test
 
 import (
 	"fmt"
@@ -6,15 +6,15 @@ import (
 	"time"
 )
 
-type TestFileSystem struct {
-	Files map[string]TestFile
+type FileSystem struct {
+	Files map[string]File
 }
 
-func (fs TestFileSystem) getFiles() map[string]TestFile {
+func (fs FileSystem) getFiles() map[string]File {
 	return fs.Files
 }
 
-func (TestFileSystem) Stat(name string) (os.FileInfo, error) {
+func (FileSystem) Stat(name string) (os.FileInfo, error) {
 	t1, _ := time.Parse("2006-01-02", "2020-01-28")
 	t2, _ := time.Parse("2006-01-02", "2020-01-29")
 
@@ -36,7 +36,7 @@ func (TestFileSystem) Stat(name string) (os.FileInfo, error) {
 	return nil, nil
 }
 
-func (fs TestFileSystem) Mkdir(name string, perm os.FileMode) error {
+func (fs FileSystem) Mkdir(name string, perm os.FileMode) error {
 	_, ok := fs.Files[name]
 	if ok {
 		return fmt.Errorf(name, "already exists")
@@ -46,7 +46,7 @@ func (fs TestFileSystem) Mkdir(name string, perm os.FileMode) error {
 	}
 }
 
-func (fs TestFileSystem) Rename(oldLocation string, newLocation string) error {
+func (fs FileSystem) Rename(oldLocation string, newLocation string) error {
 	oldFile, oldLocationOk := fs.Files[oldLocation]
 	_, newLocationOk := fs.Files[newLocation]
 	if oldLocationOk && !newLocationOk {
@@ -58,7 +58,7 @@ func (fs TestFileSystem) Rename(oldLocation string, newLocation string) error {
 	}
 }
 
-type TestFile struct {
+type File struct {
 	time  time.Time
 	name  string
 	size  int64
@@ -66,20 +66,20 @@ type TestFile struct {
 	isDir bool
 }
 
-func (f TestFile) Name() string       { return f.name }
-func (f TestFile) Size() int64        { return f.size }
-func (f TestFile) Mode() os.FileMode  { return f.mode }
-func (f TestFile) ModTime() time.Time { return f.time }
-func (f TestFile) Sys() any           { return nil }
-func (f TestFile) IsDir() bool        { return f.isDir }
+func (f File) Name() string       { return f.name }
+func (f File) Size() int64        { return f.size }
+func (f File) Mode() os.FileMode  { return f.mode }
+func (f File) ModTime() time.Time { return f.time }
+func (f File) Sys() any           { return nil }
+func (f File) IsDir() bool        { return f.isDir }
 
 func FileConstructor(
 	time time.Time,
 	name string,
 	size int64,
 	mode os.FileMode,
-	isDir bool) *TestFile {
-	return &TestFile{
+	isDir bool) *File {
+	return &File{
 		time:  time,
 		name:  name,
 		size:  size,

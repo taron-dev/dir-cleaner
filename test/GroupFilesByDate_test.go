@@ -1,8 +1,8 @@
-package dir_cleaner
+package test
 
 import (
-	"dir_cleaner"
 	"github.com/stretchr/testify/assert"
+	dirCleaner "github.com/taron-dev/dir-cleaner/dir_cleaner_util"
 	"os"
 	"testing"
 	"time"
@@ -18,7 +18,7 @@ func Test_GroupFilesByDate_MultipleFiles_GroupedCorrectly(t *testing.T) {
 
 	files := []os.FileInfo{f1, f2, f3}
 
-	actualDatesMap := dir_cleaner.GroupFilesByDate(files)
+	actualDatesMap := dirCleaner.GroupFilesByDate(files)
 	assert.Equal(t, 2, len(actualDatesMap))
 
 	actualFolder1 := actualDatesMap[t1]
