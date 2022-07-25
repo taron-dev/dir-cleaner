@@ -1,16 +1,15 @@
-package main
+package dir_cleaner
 
 import (
 	"fmt"
 	"io/fs"
 	"io/ioutil"
 	"log"
-	"os"
 	"time"
 )
 
 func main() {
-	fmt.Println("DirCleaner started\nEnter path to directory:")
+	log.Println("DirCleaner started\nEnter path to directory:")
 	var minFilesInDir = 2
 	var pathToDirectory = ""
 
@@ -22,12 +21,7 @@ func main() {
 	}
 
 	// Validate path
-	// skip if length is too short (something stupid)
-	if len(pathToDirectory) < 5 {
-		log.Fatal("Path is too short!")
-		return
-	}
-	pathIsNotDirectory, err := isNotDirectory(pathToDirectory)
+	pathIsNotDirectory, err := IsNotDirectory(pathToDirectory, fileSystem)
 	if err != nil || pathIsNotDirectory {
 		log.Fatal("Path is not directory!", err)
 		return
@@ -40,18 +34,18 @@ func main() {
 		return
 	}
 
-	var datesMap = sortFilesByDateToMap(files)
+	var datesMap = GroupFilesByDate(files)
 
-	err = cleanUpFilesToFolders(pathToDirectory, datesMap, minFilesInDir)
+	err = CleanUpFilesToFolders(pathToDirectory, datesMap, minFilesInDir, fileSystem)
 	if err != nil {
 		log.Fatal("Can't clean up files.", err)
 		return
 	}
-	fmt.Println("Directory has been cleaned successfully.")
+	log.Println("Directory has been cleaned successfully.")
 }
 
-func isNotDirectory(path string) (bool, error) {
-	fileInfo, err := os.Stat(path)
+func IsNotDirectory(path string, fs FileSystem) (bool, error) {
+	fileInfo, err := fs.Stat(path)
 	if err != nil {
 		return true, err
 	}
@@ -59,50 +53,46 @@ func isNotDirectory(path string) (bool, error) {
 	return !fileInfo.IsDir(), err
 }
 
-func sortFilesByDateToMap(files []fs.FileInfo) map[time.Time][]fs.FileInfo {
+func GroupFilesByDate(files []fs.FileInfo) map[time.Time][]File {
 	// build map with date as key and list of files as value
-	var datesMap = map[time.Time][]fs.FileInfo{}
+	var datesMap = map[time.Time][]File{}
 	for _, file := range files {
 		if file.IsDir() == false {
-			// remove hours minutes and seconds from file date
+			// remove hours minutes and seconds from File date
 			hours := -time.Duration(file.ModTime().Hour())
 			minutes := -time.Duration(file.ModTime().Minute())
 			seconds := -time.Duration(file.ModTime().Second())
 			keyTime := file.ModTime().Add(time.Hour*hours + time.Minute*minutes + time.Second*seconds)
 
 			if datesMap[keyTime] == nil {
-				datesMap[keyTime] = []fs.FileInfo{file}
+				datesMap[keyTime] = []File{file.(File)}
 			} else {
 				var actualKeyFiles = datesMap[keyTime]
-				datesMap[keyTime] = append(actualKeyFiles, file)
+				datesMap[keyTime] = append(actualKeyFiles, file.(File))
 			}
 		}
 	}
 	return datesMap
 }
 
-func cleanUpFilesToFolders(pathToDirectory string, datesFilesMap map[time.Time][]fs.FileInfo, minFilesInDir int) error {
+func CleanUpFilesToFolders(pathToDirectory string, datesFilesMap map[time.Time][]File, minFilesInDir int, customFileSystem FileSystem) error {
 	for keyDate, listOfFiles := range datesFilesMap {
-		// create folders
-		var dirName = ""
 		createFolderForFiles := len(listOfFiles) > minFilesInDir
 		if createFolderForFiles {
-			dirName = pathToDirectory + "/" + keyDate.Format("2006-01-02")
-			err := os.Mkdir(dirName, 0774)
+			// create folders
+			dirName := pathToDirectory + "/" + keyDate.Format("2006-01-02")
+			err := customFileSystem.Mkdir(dirName, 0774)
 			if err != nil {
 				log.Println("Can't create directory "+dirName, err)
-				dirName = ""
 			}
-		}
 
-		// move files to specific folder
-		if dirName != "" {
+			// move files to specific folder
 			for _, file := range listOfFiles {
 				oldLocation := pathToDirectory + "/" + file.Name()
 				newLocation := dirName + "/" + file.Name()
-				err := os.Rename(oldLocation, newLocation)
+				err := customFileSystem.Rename(oldLocation, newLocation)
 				if err != nil {
-					log.Println("Can't move file from "+oldLocation+" to "+newLocation, err)
+					log.Println("Can't move File from "+oldLocation+" to "+newLocation, err)
 					return err
 				}
 			}
