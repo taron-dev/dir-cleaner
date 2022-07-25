@@ -5,37 +5,11 @@ import (
 	"io/fs"
 	"io/ioutil"
 	"log"
-	"os"
 	"time"
 )
 
-var customFileSystem FileSystem = osFS{}
-
-type FileSystem interface {
-	Stat(name string) (os.FileInfo, error)
-	Mkdir(name string, perm os.FileMode) error
-	Rename(oldLocation string, newLocation string) error
-}
-
-type File interface {
-	Name() string
-	ModTime() time.Time
-	IsDir() bool
-}
-
-// osFS implements FileSystem using the local disk.
-type osFS struct{}
-
-func (osFS) Stat(name string) (os.FileInfo, error) { return os.Stat(name) }
-func (osFS) Mkdir(name string, perm os.FileMode) error {
-	return os.Mkdir(name, perm)
-}
-func (osFS) Rename(oldLocation string, newLocation string) error {
-	return os.Rename(oldLocation, newLocation)
-}
-
 func main() {
-	fmt.Println("DirCleaner started\nEnter path to directory:")
+	log.Println("DirCleaner started\nEnter path to directory:")
 	var minFilesInDir = 2
 	var pathToDirectory = ""
 
@@ -47,12 +21,7 @@ func main() {
 	}
 
 	// Validate path
-	// skip if length is too short (something stupid)
-	if len(pathToDirectory) < 5 {
-		log.Fatal("Path is too short!")
-		return
-	}
-	pathIsNotDirectory, err := IsNotDirectory(pathToDirectory, customFileSystem)
+	pathIsNotDirectory, err := IsNotDirectory(pathToDirectory, fileSystem)
 	if err != nil || pathIsNotDirectory {
 		log.Fatal("Path is not directory!", err)
 		return
@@ -67,12 +36,12 @@ func main() {
 
 	var datesMap = GroupFilesByDate(files)
 
-	err = CleanUpFilesToFolders(pathToDirectory, datesMap, minFilesInDir, customFileSystem)
+	err = CleanUpFilesToFolders(pathToDirectory, datesMap, minFilesInDir, fileSystem)
 	if err != nil {
 		log.Fatal("Can't clean up files.", err)
 		return
 	}
-	fmt.Println("Directory has been cleaned successfully.")
+	log.Println("Directory has been cleaned successfully.")
 }
 
 func IsNotDirectory(path string, fs FileSystem) (bool, error) {
@@ -108,20 +77,16 @@ func GroupFilesByDate(files []fs.FileInfo) map[time.Time][]File {
 
 func CleanUpFilesToFolders(pathToDirectory string, datesFilesMap map[time.Time][]File, minFilesInDir int, customFileSystem FileSystem) error {
 	for keyDate, listOfFiles := range datesFilesMap {
-		// create folders
-		var dirName = ""
 		createFolderForFiles := len(listOfFiles) > minFilesInDir
 		if createFolderForFiles {
-			dirName = pathToDirectory + "/" + keyDate.Format("2006-01-02")
+			// create folders
+			dirName := pathToDirectory + "/" + keyDate.Format("2006-01-02")
 			err := customFileSystem.Mkdir(dirName, 0774)
 			if err != nil {
 				log.Println("Can't create directory "+dirName, err)
-				dirName = ""
 			}
-		}
 
-		// move files to specific folder
-		if dirName != "" {
+			// move files to specific folder
 			for _, file := range listOfFiles {
 				oldLocation := pathToDirectory + "/" + file.Name()
 				newLocation := dirName + "/" + file.Name()
